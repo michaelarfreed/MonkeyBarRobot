@@ -1,10 +1,9 @@
 //MOTOR AND SERVO
-#include <Servo.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <ESP32Encoder.h>
 #include <ArduinoJson.h>        // for wifi package parsing
 #include "ESPAsyncWebServer.h"  // for matlab/wifi
-#include <WiFi.h>               // for wifi
+#include <WiFi.h>               // for wifi     
 
 // wifi communication with matlab
 const char* ssid = "Madhu-ESP-Network";  
@@ -29,7 +28,7 @@ int encoder_tick_count=48;
 int gear_ratio=48;
 
 //gear ratio=1/48
-int encoder_ticks_per_rotation=_tick*gear_ratio;
+int encoder_ticks_per_rotation=encoder_tick_count*gear_ratio;
 int rotation_quarter=encoder_ticks_per_rotation/4;
 
 float gear_diameter=29.75; //mm
@@ -86,10 +85,13 @@ void setup() {
   //encoder parameter
   Serial.println("Setting up encoder code");
   ESP32Encoder::useInternalWeakPullResistors=UP;
-  encoder1.attachHalfQuad(19, 18); // (A,B)/19->white
+  encoder1.attachHalfQuad(5,  17); // (A,B)/5->white
   encoder2.attachHalfQuad(19, 18); // (A,B)/19->white
   encoder1.clearCount();
   encoder2.clearCount();
+
+  Serial.print("Initial encoder1 reading = "); Serial.println(encoder1.getCount());
+  Serial.print("Initial encoder2 reading = "); Serial.println(encoder2.getCount());
   
   //servo set-up
   Serial.println("Setting up servos");
@@ -124,7 +126,7 @@ void setup() {
 }
 
 void loop() {
-
+  delay(50);
 }
 
 void setup_server() 
@@ -152,6 +154,12 @@ void setup_server()
       state_bool   = jsonBuffer["stateBool"];
       state_float  = jsonBuffer["stateFloat"];
 
+      Serial.print("received wifi package: command_type = "); Serial.print(command_type);
+      Serial.print("; motor_index = "); Serial.print(motor_index);
+      Serial.print("; stateBool = ");   Serial.print(state_bool);
+      Serial.print("; stateFloat = ");  Serial.print(state_float);
+      Serial.print("\n");
+
       processWifiPacket();
 
       request->send_P(200, "text/plain", "1"); 
@@ -167,7 +175,7 @@ void processWifiPacket() {
   if (command_type.equals("gripper")) {
     processGripperPacket();
   } else { //command_type.equals("arm")
-    processArmPacket(motor_index);
+    processArmPacket();
   }
 }
 
@@ -187,7 +195,7 @@ void closeGripper() {
   control.setPWM(motor_index, 0, servo_close_pwm);
 }
 
-void processArmPacket(int index) {
+void processArmPacket() {
   if (motor_index == 0) {
     moveLeftArm();
   } else { // motor_index == 1
@@ -196,22 +204,27 @@ void processArmPacket(int index) {
 }
 
 void moveLeftArm() {
+  Serial.println("moving left arm");
   float currentPosMm = encoderToMm((int32_t)encoder1.getCount());
   if (currentPosMm > state_float) {
     // reverse
     digitalWrite(motor1Pin1, LOW);
     digitalWrite(motor1Pin2, HIGH);
+    ledcWrite(pwmChannel1, dutyCycle1);
 
   } else if (currentPosMm < state_float) {
     // forward
     digitalWrite(motor1Pin1, HIGH);
     digitalWrite(motor1Pin2, LOW);
+    ledcWrite(pwmChannel1, dutyCycle1);
   } else {
     // off
   }
 
   while (abs(currentPosMm - state_float) > 5) { // keep moving until w/in 5 mm of target
+    // Serial.print("encoder error = "); Serial.println(abs(currentPosMm - state_float));
     currentPosMm = encoderToMm((int32_t)encoder1.getCount());
+    // delay(50);
   }
 
   digitalWrite(motor1Pin1, LOW);
@@ -219,24 +232,31 @@ void moveLeftArm() {
 }
 
 void moveRightArm() {
+  Serial.println("moving right arm");
+  Serial.print("dutyCycle2 = "); Serial.println(dutyCycle2);
   float currentPosMm = encoderToMm((int32_t)encoder2.getCount());
   if (currentPosMm > state_float) {
     // reverse
     // TODO: these directions might need to change after mounted
-    digitalWrite(motor2Pin3, LOW);
-    digitalWrite(motor2Pin4, HIGH);
+    digitalWrite(motor2Pin3, HIGH);
+    digitalWrite(motor2Pin4, LOW);
+    ledcWrite(pwmChannel2, dutyCycle2);
     
   } else if (currentPosMm < state_float) {
     // forward
     // TODO: these directions might need to change after mounted
     digitalWrite(motor2Pin3, HIGH);
     digitalWrite(motor2Pin4, LOW);
+    ledcWrite(pwmChannel2, dutyCycle2);
+
   } else {
     // off
   }
 
   while (abs(currentPosMm - state_float) > 5) { // keep moving until w/in 5 mm of target
+    // Serial.print("encoder error = "); Serial.println(abs(currentPosMm - state_float));
     currentPosMm = encoderToMm((int32_t)encoder2.getCount());
+    // delay(50);
   }
 
   digitalWrite(motor2Pin3, LOW);
@@ -245,5 +265,6 @@ void moveRightArm() {
 }
 
 float encoderToMm(int encoderVal) {
+  // Serial.print("encoderVal = ");  Serial.println(encoderVal);
   return encoderVal * encoderTickToMm;
 }
