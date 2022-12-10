@@ -2,14 +2,14 @@
 #include <Adafruit_PWMServoDriver.h>
 #include <ESP32Encoder.h>
 #include <ArduinoJson.h>        // for wifi package parsing
-// #include "ESPAsyncWebServer.h"  // for matlab/wifi
-// #include <WiFi.h>               // for wifi
+#include "ESPAsyncWebServer.h"  // for matlab/wifi
+#include <WiFi.h>               // for wifi
 
 // wifi communication with matlab
 const char* ssid = "Madhu-ESP-Network";  
 const char* password = "123456789"; 
 
-// AsyncWebServer server(80);
+AsyncWebServer server(80);
 DynamicJsonDocument jsonBuffer(256);
 
 String command_type  = "";
@@ -110,7 +110,7 @@ void setup() {
 
   // WiFi
   Serial.println("setup WiFi");
-  // setup_server();
+  setup_server();
 
   Serial.println("=======================\nDone setup\n=======================\n");
 }
@@ -119,17 +119,24 @@ void loop() {
   //Motor 2
   //Serial.println(one_tick);
   dutyCycle2 = 200;
-  Serial.println("Motor 2");
+  // Serial.println("Motor 2");
   digitalWrite(motor2Pin3, HIGH);
   digitalWrite(motor2Pin4, LOW);
   ledcWrite(pwmChannel2, dutyCycle2);
+
+  Serial.print("in loop, state_float = "); Serial.println(state_float);
+
   while (((int32_t)encoder.getCount())*one_tick<50){
+  // digitalWrite(motor2Pin3, HIGH);
+  // digitalWrite(motor2Pin4, LOW);
+  // ledcWrite(pwmChannel2, dutyCycle2);
     // ledcWrite(pwmChannel2, dutyCycle2);   
     //Serial.print("Forward with duty cycle: ");
     //Serial.println(dutyCycle2);
     //dutyCycle2 = dutyCycle2 + 5;
     //delay(500);
     Serial.println((int32_t)encoder.getCount()*one_tick);
+    // delay(100);
   }
   
   digitalWrite(motor2Pin3, LOW);
@@ -143,44 +150,45 @@ void loop() {
 
 void setup_server() 
 {
-  // WiFi.softAP(ssid, password);
-  // IPAddress IP = WiFi.softAPIP();
-  // Serial.print("IP Address = "); Serial.println(IP);
+  WiFi.softAP(ssid, password);
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("IP Address = "); Serial.println(IP);
 
   // setup for recieving from matlab
-  // server.on("/receive",HTTP_POST,[](AsyncWebServerRequest * request){},
-  //   NULL,[](AsyncWebServerRequest * request, uint8_t *data_in, size_t len, size_t index, size_t total) {
+  server.on("/receive",HTTP_POST,[](AsyncWebServerRequest * request){},
+    NULL,[](AsyncWebServerRequest * request, uint8_t *data_in, size_t len, size_t index, size_t total) {
 
-  //     String msg = String((char *)data_in, len); // takes the given value 
+      String msg = String((char *)data_in, len); // takes the given value 
 
-  //    // parse the json message. the format is 
-  //     DeserializationError error = deserializeJson(jsonBuffer, msg); 
-  //     if (error) {
-  //       request->send_P(200, "text/plain", "-1"); 
-  //       Serial.println("error in json parsing");
-  //       return;
-  //     }
+     // parse the json message. the format is 
+      DeserializationError error = deserializeJson(jsonBuffer, msg); 
+      if (error) {
+        request->send_P(200, "text/plain", "-1"); 
+        Serial.println("error in json parsing");
+        return;
+      }
 
-  //     command_type = jsonBuffer["commandType"].as<String>();
-  //     motor_index  = jsonBuffer["index"];
-  //     state_bool   = jsonBuffer["stateBool"];
-  //     state_float  = jsonBuffer["stateFloat"];
+      command_type = jsonBuffer["commandType"].as<String>();
+      motor_index  = jsonBuffer["index"];
+      state_bool   = jsonBuffer["stateBool"];
+      state_float  = jsonBuffer["stateFloat"];
 
-  //     processWifiPacket();
+      Serial.print("command_type = ");  Serial.print(command_type);
+      Serial.print("; motor_index = "); Serial.print(motor_index);
+      Serial.print("; state_bool = ");  Serial.print(state_bool);
+      Serial.print("; state_float = "); Serial.println(state_float);
 
-  //     request->send_P(200, "text/plain", "1"); 
+      processWifiPacket();
 
-  // });
+      request->send_P(200, "text/plain", "1"); 
+
+  });
 
 
   // Start server (needed)
-  // server.begin();  
+  server.begin();  
 
 }
-
-// void processWifiPacket(jsonBuffer) {
-
-// }
 
 void processWifiPacket() {
   if (command_type.equals("gripper")) {
