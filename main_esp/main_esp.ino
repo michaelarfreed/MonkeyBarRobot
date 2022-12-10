@@ -56,14 +56,20 @@ int servo_close_pwm = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.1;
 int servo_open_pwm  = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.9;
 
 // Motor A
-int motor1Pin1 = 27; 
-int motor1Pin2 = 26; 
-int enable1Pin = 14; 
+int motor1Pin1 = 17; 
+int motor1Pin2 = 5; 
+int enable1Pin = 16; 
+
+int encoder1A = 34;
+int encoder1B = 35;
 
 //Motor B
-int motor2Pin3 = 32; 
-int motor2Pin4 = 33; 
-int enable2Pin = 25; 
+int motor2Pin3 = 33; 
+int motor2Pin4 = 32; 
+int enable2Pin = 23; 
+
+int encoder2A = 36;
+int encoder2B = 39;
 
 // Setting PWM properties
 const int freq1 = 30000;
@@ -85,8 +91,8 @@ void setup() {
   //encoder parameter
   Serial.println("Setting up encoder code");
   ESP32Encoder::useInternalWeakPullResistors=UP;
-  encoder1.attachHalfQuad(5,  17); // (A,B)/5->white
-  encoder2.attachHalfQuad(19, 18); // (A,B)/19->white
+  encoder1.attachHalfQuad(encoder1A, encoder1B); // (A,B)/5->white
+  encoder2.attachHalfQuad(encoder2A, encoder2B); // (A,B)/19->white
   encoder1.clearCount();
   encoder2.clearCount();
 
@@ -222,7 +228,7 @@ void moveLeftArm() {
   }
 
   while (abs(currentPosMm - state_float) > 5) { // keep moving until w/in 5 mm of target
-    // Serial.print("encoder error = "); Serial.println(abs(currentPosMm - state_float));
+    Serial.print("encoder = "); Serial.println(currentPosMm);
     currentPosMm = encoderToMm((int32_t)encoder1.getCount());
     // delay(50);
   }
@@ -245,8 +251,8 @@ void moveRightArm() {
   } else if (currentPosMm < state_float) {
     // forward
     // TODO: these directions might need to change after mounted
-    digitalWrite(motor2Pin3, HIGH);
-    digitalWrite(motor2Pin4, LOW);
+    digitalWrite(motor2Pin3, LOW);
+    digitalWrite(motor2Pin4, HIGH);
     ledcWrite(pwmChannel2, dutyCycle2);
 
   } else {
@@ -254,7 +260,7 @@ void moveRightArm() {
   }
 
   while (abs(currentPosMm - state_float) > 5) { // keep moving until w/in 5 mm of target
-    // Serial.print("encoder error = "); Serial.println(abs(currentPosMm - state_float));
+    Serial.print("encoder = "); Serial.println(currentPosMm);
     currentPosMm = encoderToMm((int32_t)encoder2.getCount());
     // delay(50);
   }

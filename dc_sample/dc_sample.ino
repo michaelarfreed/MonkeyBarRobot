@@ -14,7 +14,7 @@ DynamicJsonDocument jsonBuffer(256);
 
 String command_type  = "";
 int motor_index   = 0;
-float state_float = 0;
+float state_float = 50;
 bool state_bool   = false; 
 
 // constants for servo control
