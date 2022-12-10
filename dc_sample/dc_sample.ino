@@ -39,7 +39,8 @@ float one_tick=circumference/rotation;
 
 
 //declare encoder object
-ESP32Encoder encoder;
+ESP32Encoder encoder1;
+ESP32Encoder encoder2;
 //servo
 Adafruit_PWMServoDriver control = Adafruit_PWMServoDriver(0x40, Wire);
 int servo_1 = 0;
@@ -51,21 +52,26 @@ int servo_2_pwm = 0;
 int servo_3_pwm = 0;
 
 // Motor A
-int motor1Pin1 = 27; 
-int motor1Pin2 = 26; 
-int enable1Pin = 14; 
+int motor1Pin1 = 17; 
+int motor1Pin2 = 5; 
+int enable1Pin = 16; 
+
+int encoder1A = 34;
+int encoder1B = 35;
 
 //Motor B
-int motor2Pin3 = 32; 
-int motor2Pin4 = 33; 
-int enable2Pin = 25; 
+int motor2Pin3 = 33; 
+int motor2Pin4 = 32; 
+int enable2Pin = 23; 
 
+int encoder2A = 36;
+int encoder2B = 39;
 
 // Setting PWM properties
 const int freq1 = 30000;
 const int freq2 = 30000;
 const int pwmChannel1 = 0;
-const int pwmChannel2 = 0;
+const int pwmChannel2 = 1;
 const int resolution1 = 8;
 const int resolution2 = 8;
 int dutyCycle1 = 200;
@@ -74,8 +80,10 @@ int dutyCycle2 = 200;
 void setup() {
   //encoder parameter
   ESP32Encoder::useInternalWeakPullResistors=UP;
-  encoder.attachHalfQuad(19, 18); // (A,B)/19->white
-  encoder.clearCount();
+  encoder1.attachHalfQuad(encoder1A, encoder1B ); // (A,B)/19->white
+  encoder1.clearCount();
+  encoder2.attachHalfQuad(encoder2A, encoder2B ); // (A,B)/19->white
+  encoder2.clearCount();
   //servo
   control.begin();
   control.setPWMFreq(FREQ);
@@ -117,35 +125,37 @@ void setup() {
 
 void loop() {
   //Motor 2
-  //Serial.println(one_tick);
   dutyCycle2 = 200;
-  // Serial.println("Motor 2");
   digitalWrite(motor2Pin3, HIGH);
   digitalWrite(motor2Pin4, LOW);
   ledcWrite(pwmChannel2, dutyCycle2);
 
   Serial.print("in loop, state_float = "); Serial.println(state_float);
 
-  while (((int32_t)encoder.getCount())*one_tick<50){
-  // digitalWrite(motor2Pin3, HIGH);
-  // digitalWrite(motor2Pin4, LOW);
-  // ledcWrite(pwmChannel2, dutyCycle2);
-    // ledcWrite(pwmChannel2, dutyCycle2);   
-    //Serial.print("Forward with duty cycle: ");
-    //Serial.println(dutyCycle2);
-    //dutyCycle2 = dutyCycle2 + 5;
-    //delay(500);
-    Serial.println((int32_t)encoder.getCount()*one_tick);
-    // delay(100);
+  while (((int32_t)encoder2.getCount())*one_tick< state_float ){
+    Serial.println((int32_t)encoder2.getCount()*one_tick);
   }
   
   digitalWrite(motor2Pin3, LOW);
   digitalWrite(motor2Pin4, LOW);
-  encoder.clearCount();
-  delay(2000);
+  encoder2.clearCount();
+  // delay(2000);
 
-  //Serial.println((int32_t)encoder.getCount());
-  //Serial.println(enc_sample);
+  digitalWrite(motor1Pin1, HIGH);
+  digitalWrite(motor1Pin2, LOW);
+  ledcWrite(pwmChannel1, dutyCycle1);
+
+  Serial.print("in loop, state_float = "); Serial.println(state_float);
+
+  while (((int32_t)encoder1.getCount())*one_tick< state_float ){
+    Serial.println((int32_t)encoder1.getCount()*one_tick);
+  }
+  
+  digitalWrite(motor1Pin1, LOW);
+  digitalWrite(motor1Pin2, LOW);
+  encoder1.clearCount();
+  delay(1000);
+
 }
 
 void setup_server() 
