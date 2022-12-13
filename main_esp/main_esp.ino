@@ -113,7 +113,7 @@ void setup() {
   pinMode(enable1Pin, OUTPUT);
 
   pinMode(motor2Pin3, OUTPUT);
-  pinMode(motor2Pin3, OUTPUT);
+  pinMode(motor2Pin4, OUTPUT);
   pinMode(enable2Pin, OUTPUT);
   
   // configure LED PWM functionalitites
@@ -240,7 +240,7 @@ void moveLeftArm() {
 void moveRightArm() {
   Serial.println("moving right arm");
   Serial.print("dutyCycle2 = "); Serial.println(dutyCycle2);
-  float currentPosMm = encoderToMm((int32_t)encoder2.getCount());
+  float currentPosMm = -1*encoderToMm((int32_t)encoder2.getCount());
   if (currentPosMm > state_float) {
     // reverse
     // TODO: these directions might need to change after mounted
@@ -261,7 +261,7 @@ void moveRightArm() {
 
   while (abs(currentPosMm - state_float) > 5) { // keep moving until w/in 5 mm of target
     Serial.print("encoder = "); Serial.println(currentPosMm);
-    currentPosMm = encoderToMm((int32_t)encoder2.getCount());
+    currentPosMm = -1*encoderToMm((int32_t)encoder2.getCount());
     // delay(50);
   }
 
