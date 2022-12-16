@@ -1,5 +1,6 @@
 //MOTOR AND SERVO
 #include <Adafruit_PWMServoDriver.h>
+#include <Adafruit_VL53L0X.h>   // for LiDAR
 #include <ESP32Encoder.h>
 #include <ArduinoJson.h>        // for wifi package parsing
 #include "ESPAsyncWebServer.h"  // for matlab/wifi
@@ -37,6 +38,10 @@ float circumference=PI*gear_diameter;
 
 float one_tick=circumference/rotation;
 
+// lidar 
+Adafruit_VL53L0X lidar1 = Adafruit_VL53L0X();
+// Adafruit_VL53L0X lidar2 = Adafruit_VL53L0X();
+// Adafruit_VL53L0X lidar3 = Adafruit_VL53L0X();
 
 //declare encoder object
 ESP32Encoder encoder1;
@@ -105,6 +110,14 @@ void setup() {
   // attach the channel to the GPIO to be controlled
   ledcAttachPin(enable1Pin, pwmChannel1);
   ledcAttachPin(enable2Pin, pwmChannel2);
+
+  // LiDAR 
+  Serial.println("LiDAR1 setup");
+  if (!lidar1.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while(1);
+  }
+  lidar1.startRangeContinuous(); // start continuous ranging
 
   Serial.begin(115200);
 
@@ -236,3 +249,5 @@ void closeGripper(int index) {
 void processArmPacket(int index) {
   return;
 }
+
+double 
