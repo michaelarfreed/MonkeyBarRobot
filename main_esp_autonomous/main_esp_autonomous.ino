@@ -1,8 +1,10 @@
 //MOTOR AND SERVO
 #include <Adafruit_PWMServoDriver.h>
-#include <ESP32Encoder.h>
+#include <Adafruit_VL53L0X.h>   // for LiDAR
 #include <ArduinoJson.h>        // for wifi package parsing
+#include <ESP32Encoder.h>
 #include "ESPAsyncWebServer.h"  // for matlab/wifi
+#include <JY901.h>
 #include <WiFi.h>               // for wifi     
 
 // wifi communication with matlab
@@ -48,10 +50,6 @@ int servo_1 = 0;
 int servo_2 = 1;
 int servo_3 = 2;
 
-int servo_1_pwm = 0;
-int servo_2_pwm = 0;
-int servo_3_pwm = 0;
-
 int servo_close_pwm = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.1;
 int servo_open_pwm  = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.9;
 
@@ -80,6 +78,19 @@ const int resolution1 = 8;
 const int resolution2 = 8;
 int dutyCycle1 = 200;
 int dutyCycle2 = 200;
+
+// lidar 
+Adafruit_VL53L0X lox1 = Adafruit_VL53L0X();
+Adafruit_VL53L0X lox2 = Adafruit_VL53L0X();
+Adafruit_VL53L0X lox3 = Adafruit_VL53L0X();
+
+const int lox1xshutPin = 18;
+const int lox2xshutPin = 19;
+const int lox3xshutPin = 13;
+
+// IMU
+float angles  [3];
+
 
 void setup() {
   // Serial set-up
@@ -124,6 +135,49 @@ void setup() {
   ledcAttachPin(enable1Pin, pwmChannel1);
   ledcAttachPin(enable2Pin, pwmChannel2);
 
+  // start IMU
+  Serial.println("IMU setup");
+  JY901.StartIIC();
+
+   // LiDAR 
+  Serial.println("LiDAR setup");
+  pinMode(lox1xshutPin, OUTPUT);
+  pinMode(lox2xshutPin, OUTPUT);
+  pinMode(lox3xshutPin, OUTPUT);
+  digitalWrite(lox1xshutPin, LOW);
+  digitalWrite(lox2xshutPin, LOW);
+  digitalWrite(lox3xshutPin, LOW);
+
+  Serial.println("LiDAR 1 setup");
+  pinMode(lox1xshutPin, INPUT);
+  delay(150);
+  if (!lox1.begin()) {
+    Serial.println(F("Failed to boot LiDAR 1"));
+    while(1);
+  }
+  lox1.setAddress((uint8_t)22);
+  lox1.startRangeContinuous(); // start continuous ranging
+
+  Serial.println("LiDAR 2 setup");
+  pinMode(lox2xshutPin, INPUT);
+  delay(150);
+  if (!lox2.begin()) {
+    Serial.println(F("Failed to boot LiDAR 2"));
+    while(1);
+  }
+  lox2.setAddress((uint8_t)22);
+  lox2.startRangeContinuous(); // start continuous ranging
+
+  Serial.println("LiDAR 3 setup");
+  pinMode(lox3xshutPin, INPUT);
+  delay(150);
+  if (!lox3.begin()) {
+    Serial.println(F("Failed to boot LiDAR 3"));
+    while(1);
+  }
+  lox3.setAddress((uint8_t)22);
+  lox3.startRangeContinuous(); // start continuous ranging
+
   // WiFi
   Serial.println("setup WiFi");
   setup_server();
@@ -132,6 +186,15 @@ void setup() {
 }
 
 void loop() {
+  Serial.print(  "lidar1: "); Serial.print(getLidar1Reading());
+  Serial.print("; lidar2: "); Serial.print(getLidar2Reading());
+  Serial.print("; lidar3: "); Serial.println(getLidar3Reading());
+
+  get_angles(angles);
+  Serial.print(  "angles[0] = "); Serial.print(angles[0]);
+  Serial.print("; angles[1] = "); Serial.print(angles[1]);
+  Serial.print("; angles[2] = "); Serial.print(angles[2]); Serial.print("\n");
+
   delay(50);
 }
 
@@ -273,4 +336,25 @@ void moveRightArm() {
 float encoderToMm(int encoderVal) {
   // Serial.print("encoderVal = ");  Serial.println(encoderVal);
   return encoderVal * encoderTickToMm;
+}
+
+void get_angles(float (& angle) [3])
+{
+  // propogate angles from IMU
+  JY901.GetAngle();
+  angle[0] = (float)JY901.stcAngle.Angle[0]/32768*180;
+  angle[1] = (float)JY901.stcAngle.Angle[1]/32768*180;
+  angle[2] = (float)JY901.stcAngle.Angle[2]/32768*180;
+}
+
+int getLidar1Reading() {
+  return lox1.readRange();
+}
+
+int getLidar2Reading() {
+  return lox2.readRange();
+}
+
+int getLidar3Reading() {
+  return lox3.readRange();
 }
