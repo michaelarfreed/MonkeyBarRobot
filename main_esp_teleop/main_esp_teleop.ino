@@ -50,8 +50,8 @@ int servo_1 = 0;
 int servo_2 = 1;
 int servo_3 = 2;
 
-int servo_close_pwm = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.1;
-int servo_open_pwm  = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.9;
+int servo_close_pwm = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.1; //*0.5; // 800;  //
+int servo_open_pwm  = MIN_PULSE + (MAX_PULSE - MIN_PULSE)*0.5; //*0.9; // 2000; //
 
 // Motor A
 int motor1Pin1 = 17; 
@@ -79,17 +79,17 @@ const int resolution2 = 8;
 int dutyCycle1 = 200;
 int dutyCycle2 = 200;
 
-// lidar 
-Adafruit_VL53L0X lox1 = Adafruit_VL53L0X();
-Adafruit_VL53L0X lox2 = Adafruit_VL53L0X();
-Adafruit_VL53L0X lox3 = Adafruit_VL53L0X();
+// // lidar 
+// Adafruit_VL53L0X lox1 = Adafruit_VL53L0X();
+// Adafruit_VL53L0X lox2 = Adafruit_VL53L0X();
+// Adafruit_VL53L0X lox3 = Adafruit_VL53L0X();
 
-const int lox1xshutPin = 18;
-const int lox2xshutPin = 19;
-const int lox3xshutPin = 13;
+// const int lox1xshutPin = 18;
+// const int lox2xshutPin = 19;
+// const int lox3xshutPin = 13;
 
-// IMU
-float angles  [3];
+// // IMU
+// float angles  [3];
 
 
 void setup() {
@@ -102,7 +102,7 @@ void setup() {
   //encoder parameter
   Serial.println("Setting up encoder code");
   ESP32Encoder::useInternalWeakPullResistors=UP;
-  encoder1.attachHalfQuad(encoder1A, encoder1B); // (A,B)/5->white
+  encoder1.attachHalfQuad(encoder1A, encoder1B); // (A,B)/A==> yellow, B==>White
   encoder2.attachHalfQuad(encoder2A, encoder2B); // (A,B)/19->white
   encoder1.clearCount();
   encoder2.clearCount();
@@ -135,48 +135,48 @@ void setup() {
   ledcAttachPin(enable1Pin, pwmChannel1);
   ledcAttachPin(enable2Pin, pwmChannel2);
 
-  // start IMU
-  Serial.println("IMU setup");
-  JY901.StartIIC();
+  // // start IMU
+  // Serial.println("IMU setup");
+  // JY901.StartIIC();
 
-   // LiDAR 
-  Serial.println("LiDAR setup");
-  pinMode(lox1xshutPin, OUTPUT);
-  pinMode(lox2xshutPin, OUTPUT);
-  pinMode(lox3xshutPin, OUTPUT);
-  digitalWrite(lox1xshutPin, LOW);
-  digitalWrite(lox2xshutPin, LOW);
-  digitalWrite(lox3xshutPin, LOW);
+  //  // LiDAR 
+  // Serial.println("LiDAR setup");
+  // pinMode(lox1xshutPin, OUTPUT);
+  // pinMode(lox2xshutPin, OUTPUT);
+  // pinMode(lox3xshutPin, OUTPUT);
+  // digitalWrite(lox1xshutPin, LOW);
+  // digitalWrite(lox2xshutPin, LOW);
+  // digitalWrite(lox3xshutPin, LOW);
 
-  Serial.println("LiDAR 1 setup");
-  pinMode(lox1xshutPin, INPUT);
-  delay(150);
-  if (!lox1.begin()) {
-    Serial.println(F("Failed to boot LiDAR 1"));
-    while(1);
-  }
-  lox1.setAddress((uint8_t)22);
-  lox1.startRangeContinuous(); // start continuous ranging
+  // Serial.println("LiDAR 1 setup");
+  // pinMode(lox1xshutPin, INPUT);
+  // delay(150);
+  // if (!lox1.begin()) {
+  //   Serial.println(F("Failed to boot LiDAR 1"));
+  //   while(1);
+  // }
+  // lox1.setAddress((uint8_t)22);
+  // lox1.startRangeContinuous(); // start continuous ranging
 
-  Serial.println("LiDAR 2 setup");
-  pinMode(lox2xshutPin, INPUT);
-  delay(150);
-  if (!lox2.begin()) {
-    Serial.println(F("Failed to boot LiDAR 2"));
-    while(1);
-  }
-  lox2.setAddress((uint8_t)22);
-  lox2.startRangeContinuous(); // start continuous ranging
+  // Serial.println("LiDAR 2 setup");
+  // pinMode(lox2xshutPin, INPUT);
+  // delay(150);
+  // if (!lox2.begin()) {
+  //   Serial.println(F("Failed to boot LiDAR 2"));
+  //   while(1);
+  // }
+  // lox2.setAddress((uint8_t)22);
+  // lox2.startRangeContinuous(); // start continuous ranging
 
-  Serial.println("LiDAR 3 setup");
-  pinMode(lox3xshutPin, INPUT);
-  delay(150);
-  if (!lox3.begin()) {
-    Serial.println(F("Failed to boot LiDAR 3"));
-    while(1);
-  }
-  lox3.setAddress((uint8_t)22);
-  lox3.startRangeContinuous(); // start continuous ranging
+  // Serial.println("LiDAR 3 setup");
+  // pinMode(lox3xshutPin, INPUT);
+  // delay(150);
+  // if (!lox3.begin()) {
+  //   Serial.println(F("Failed to boot LiDAR 3"));
+  //   while(1);
+  // }
+  // lox3.setAddress((uint8_t)22);
+  // lox3.startRangeContinuous(); // start continuous ranging
 
   // WiFi
   Serial.println("setup WiFi");
@@ -186,14 +186,14 @@ void setup() {
 }
 
 void loop() {
-  Serial.print(  "lidar1: "); Serial.print(getLidar1Reading());
-  Serial.print("; lidar2: "); Serial.print(getLidar2Reading());
-  Serial.print("; lidar3: "); Serial.println(getLidar3Reading());
+  // Serial.print(  "lidar1: "); Serial.print(getLidar1Reading());
+  // Serial.print("; lidar2: "); Serial.print(getLidar2Reading());
+  // Serial.print("; lidar3: "); Serial.println(getLidar3Reading());
 
-  get_angles(angles);
-  Serial.print(  "angles[0] = "); Serial.print(angles[0]);
-  Serial.print("; angles[1] = "); Serial.print(angles[1]);
-  Serial.print("; angles[2] = "); Serial.print(angles[2]); Serial.print("\n");
+  // get_angles(angles);
+  // Serial.print(  "angles[0] = "); Serial.print(angles[0]);
+  // Serial.print("; angles[1] = "); Serial.print(angles[1]);
+  // Serial.print("; angles[2] = "); Serial.print(angles[2]); Serial.print("\n");
 
   delay(50);
 }
@@ -323,7 +323,7 @@ void moveRightArm() {
   }
 
   while (abs(currentPosMm - state_float) > 5) { // keep moving until w/in 5 mm of target
-    Serial.print("encoder = "); Serial.println(currentPosMm);
+    Serial.print("encoder2 = "); Serial.println(currentPosMm);
     currentPosMm = -1*encoderToMm((int32_t)encoder2.getCount());
     // delay(50);
   }
@@ -338,23 +338,23 @@ float encoderToMm(int encoderVal) {
   return encoderVal * encoderTickToMm;
 }
 
-void get_angles(float (& angle) [3])
-{
-  // propogate angles from IMU
-  JY901.GetAngle();
-  angle[0] = (float)JY901.stcAngle.Angle[0]/32768*180;
-  angle[1] = (float)JY901.stcAngle.Angle[1]/32768*180;
-  angle[2] = (float)JY901.stcAngle.Angle[2]/32768*180;
-}
+// void get_angles(float (& angle) [3])
+// {
+//   // propogate angles from IMU
+//   JY901.GetAngle();
+//   angle[0] = (float)JY901.stcAngle.Angle[0]/32768*180;
+//   angle[1] = (float)JY901.stcAngle.Angle[1]/32768*180;
+//   angle[2] = (float)JY901.stcAngle.Angle[2]/32768*180;
+// }
 
-int getLidar1Reading() {
-  return lox1.readRange();
-}
+// int getLidar1Reading() {
+//   return lox1.readRange();
+// }
 
-int getLidar2Reading() {
-  return lox2.readRange();
-}
+// int getLidar2Reading() {
+//   return lox2.readRange();
+// }
 
-int getLidar3Reading() {
-  return lox3.readRange();
-}
+// int getLidar3Reading() {
+//   return lox3.readRange();
+// }

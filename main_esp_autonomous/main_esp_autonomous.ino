@@ -91,6 +91,20 @@ const int lox3xshutPin = 13;
 // IMU
 float angles  [3];
 
+// constants for autonomy
+// lidar
+const int threshold_to_ungrasp = 20;  // TODO: change this 
+const int threshold_to_grasp   = 25;  // TODO: change this 
+
+// IMU constants
+const float max_tilt_angle[3] = {10, 10, 10}; // TODO: change this 
+
+// rack + pinion constants
+const float max_rack_distance = 30; // TODO: change this
+
+// state
+int arm_num = 1;
+int step_num = 1;
 
 void setup() {
   // Serial set-up
@@ -180,22 +194,82 @@ void setup() {
 
   // WiFi
   Serial.println("setup WiFi");
-  setup_server();
+  // setup_server();
 
   Serial.println("=======================\nDone setup\n=======================\n");
 }
 
 void loop() {
-  Serial.print(  "lidar1: "); Serial.print(getLidar1Reading());
-  Serial.print("; lidar2: "); Serial.print(getLidar2Reading());
-  Serial.print("; lidar3: "); Serial.println(getLidar3Reading());
+  // Serial.print(  "lidar1: "); Serial.print(getLidar1Reading());
+  // Serial.print("; lidar2: "); Serial.print(getLidar2Reading());
+  // Serial.print("; lidar3: "); Serial.println(getLidar3Reading());
 
-  get_angles(angles);
-  Serial.print(  "angles[0] = "); Serial.print(angles[0]);
-  Serial.print("; angles[1] = "); Serial.print(angles[1]);
-  Serial.print("; angles[2] = "); Serial.print(angles[2]); Serial.print("\n");
+  // get_angles(angles);
+  // Serial.print(  "angles[0] = "); Serial.print(angles[0]);
+  // Serial.print("; angles[1] = "); Serial.print(angles[1]);
+  // Serial.print("; angles[2] = "); Serial.print(angles[2]); Serial.print("\n");
 
-  delay(50);
+  // delay(50);
+  switch (step_num) {
+    case 1:
+      ungrasp(arm_num);
+      break;
+    case 2:
+
+      break;
+    case 3:
+      break;
+    case 4:
+      break;
+  }
+
+}
+
+void ungrasp(int arm_num) {
+  control.setPWM(motor_index, 0, servo_open_pwm);
+}
+
+void moveFromUnderBar(int arm_num){
+  while (getLidarReading(arm_num) < threshold_to_ungrasp) {
+    moveForward(arm_num);
+  }
+  stopMove(arm_num);
+}
+
+void moveToNextBar(int arm_num){
+  while (getLidarReading(arm_num) < threshold_to_grasp) {
+    moveForward(arm_num);
+  }
+  stopMove(arm_num);
+
+}
+
+void moveForward(int arm_num) {
+  if(arm_num==1){
+    digitalWrite(motor1Pin1, HIGH);
+    digitalWrite(motor1Pin2, LOW);
+  }
+  else if(arm_num==2){
+    digitalWrite(motor2Pin3, HIGH);
+    digitalWrite(motor2Pin4, LOW);
+  }
+  else{
+    digitalWrite(motor1Pin1, LOW);
+    digitalWrite(motor1Pin2, HIGH);
+    digitalWrite(motor2Pin3, LOW);
+    digitalWrite(motor2Pin4, HIGH);
+  }
+}
+
+void stopMove(int arm_num) {
+    digitalWrite(motor1Pin1, LOW);
+    digitalWrite(motor1Pin2, LOW);
+    digitalWrite(motor2Pin3, LOW);
+    digitalWrite(motor2Pin4, LOW);
+}
+
+void grasp(int arm_num){
+  control.setPWM(motor_index, 0, servo_close_pwm);  
 }
 
 void setup_server() 
@@ -345,6 +419,17 @@ void get_angles(float (& angle) [3])
   angle[0] = (float)JY901.stcAngle.Angle[0]/32768*180;
   angle[1] = (float)JY901.stcAngle.Angle[1]/32768*180;
   angle[2] = (float)JY901.stcAngle.Angle[2]/32768*180;
+}
+
+int getLidarReading(int arm_num) {
+  switch (arm_num) {
+    case 1:
+      return getLidar1Reading();
+    case 2:
+      return getLidar2Reading();
+    case 3:
+      return getLidar3Reading(); 
+  }
 }
 
 int getLidar1Reading() {
